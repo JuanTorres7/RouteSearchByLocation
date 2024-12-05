@@ -1,25 +1,48 @@
 #include "DataManager.cpp"
 
-int main() {
-    vector<pair<double, double>> points = {{40.7128, -74.0060}, {34.0522, -118.2437}, {51.5074, -0.1278}, {48.8566, 2.3522}};
-    DataManager data(points);
 
-    Graph graph = data.buildKNNGraph(3);
-    graph.printGraph();
+int main(){
+    // 1 .Crear querys 3 <= q <= 10 -> QueryGenerate.cpp
+    // Crear rutas random 2 < t < n
+    // costo
+    // probabilidad
 
-    vector<Query> queries = {
-        {{{40.7128, -74.0060}, {34.0522, -118.2437}}, 1.0},
-        {{{51.5074, -0.1278}, {48.8566, 2.3522}}, 1.5}
-    };
+    // 1. Crear Querys ---------------------------
+    // Obtencion y lectura de querys
+    
+    int vtx = 20000;
+    DataManager data("cleaned_trips_data.csv", 5000);
+    Graph grafo;
+    //data.displayTrips();
+    //data.displayCartesianCoordinates();
+    grafo = data.buildKNNGraph(data.allCartesian, 4);
+    //grafo.printGraph();
 
-    Route newRoute = {{{40.7128, -74.0060}, {34.0522, -118.2437}, {51.5074, -0.1278}}};
-
-    vector<int> results = qloe(graph, queries, newRoute);
-    cout << "Queries coincidentes: ";
-    for (int queryId : results) {
-        cout << queryId << " ";
+    vector<Query> querys = data.generateMultipleQueries(1000);
+    vector<Graph> rutas = data.generateMultipleSubgraphs(grafo, 400);
+    vector<RSL> rsls;
+    for(auto query : querys){
+        rsls.push_back(RSL(query, 0.8));
     }
-    cout << endl;
+    cout << "Cantidad de vertices en grafo: " << vtx << endl;
+    cout << "Tiempo de ejecucion de DRM" << endl;
+    auto inicio = chrono::high_resolution_clock::now();
+    for(auto ruta : rutas){
+        vector<Query> drm = data.DRM(rsls, ruta);
+    }
+    auto fin = chrono::high_resolution_clock::now();
+    auto duracion = std::chrono::duration_cast<chrono::milliseconds>(fin - inicio);
+    cout << "El tiempo de ejecucion fue: " << duracion.count() << " milisegundos." << endl;
+    
+    cout << "Tiempo de ejecucion de QLOE" << endl;
+    auto inicio2 = std::chrono::high_resolution_clock::now();
+    for(auto ruta : rutas){
+        vector<int> qloe = data.qloe(grafo, rsls, ruta);
+    }
+    auto fin2 = chrono::high_resolution_clock::now();
+    auto duracion2 = chrono::duration_cast<chrono::milliseconds>(fin2 - inicio2);
+    cout << "El tiempo de ejecucion fue: " << duracion2.count() << " milisegundos." << endl;
 
+    
     return 0;
 }
